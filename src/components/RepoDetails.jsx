@@ -17,7 +17,7 @@ import {
   IconButton
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { fetchDetailsStart, setSelectedMetric, resetDetails } from '../store/detailsSlice';
+import { fetchDetailsStart, setSelectedMetric, resetDetails } from '../redux/detailsSlice';
 import CommitChart from './CommitChart';
 import ContributorChart from './ContributorChart';
 

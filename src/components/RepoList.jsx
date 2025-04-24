@@ -1,112 +1,105 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
-  Alert, 
-  Grid, 
+// src/components/RepoList.jsx
+import React, { useEffect, useState } from 'react';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Paper,
-  Divider
 } from '@mui/material';
-import { fetchRepositoriesStart } from '../store/repoSlice';
-import RepoItem from './RepoItem';
-import TimeFilter from './TimeFilter';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchRepos, setTimeFrame } from '../redux/repoSlice';
+import { fetchDetailsStart, resetDetails } from '../redux/detailsSlice';
+import RepoCard from './RepoCard';
 
-/**
- * Component for displaying the list of repositories
- */
 const RepoList = () => {
   const dispatch = useDispatch();
-  const { repositories, loading, error, hasMore, timeFrame } = useSelector((state) => state.repos);
-  const observer = useRef();
+  const { repositories, loading, error, hasMore, timeFrame, page } = useSelector((s) => s.repos);
+  const { loading: detailsLoading } = useSelector((s) => s.details);
+  const [expanded, setExpanded] = useState(null);
 
-  // Initial data fetch on component mount
+  // Load on mount & when timeframe changes
   useEffect(() => {
-    dispatch(fetchRepositoriesStart({ reset: true }));
-  }, [dispatch]);
+    dispatch(fetchRepos({ reset: true }));
+    dispatch(resetDetails());
+    setExpanded(null);
+  }, [dispatch, timeFrame]);
 
-  // Set up intersection observer for infinite scrolling
-  const lastRepoRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          dispatch(fetchRepositoriesStart({}));
+  // Infinite scroll
+  useEffect(() => {
+    if (!loading && hasMore) {
+      const onScroll = () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+          dispatch(fetchRepos({ page }));
         }
-      });
+      };
+      window.addEventListener('scroll', onScroll);
+      return () => window.removeEventListener('scroll', onScroll);
+    }
+  }, [loading, hasMore, page, dispatch]);
 
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore, dispatch]
-  );
+  const handleTimeChange = (e) => {
+    dispatch(setTimeFrame(e.target.value));
+  };
 
-  // Get the time period label for display
-  const getTimePeriodLabel = () => {
-    switch(timeFrame) {
-      case '1w': return 'Last Week';
-      case '2w': return 'Last 2 Weeks';
-      case '1m': 
-      default: return 'Last Month';
+  const toggleExpand = (fullName, owner, name) => {
+    if (expanded === fullName) {
+      setExpanded(null);
+      dispatch(resetDetails());
+    } else {
+      setExpanded(fullName);
+      dispatch(fetchDetailsStart({ owner, repo: name }));
     }
   };
 
   return (
     <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Most Starred GitHub Repositories
+      <Typography variant="h4" gutterBottom sx={{ color: 'text.primary' }}>
+        Most Starred Repos
       </Typography>
-      <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-        {getTimePeriodLabel()}
-      </Typography>
-      
-      <TimeFilter />
-      
-      <Divider sx={{ my: 3 }} />
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
 
-      <Grid container spacing={2}>
-        {repositories.map((repo, index) => {
-          if (repositories.length === index + 1) {
-            return (
-              <Grid item xs={12} key={repo.id}>
-                <div ref={lastRepoRef}>
-                  <RepoItem repo={repo} />
-                </div>
-              </Grid>
-            );
-          } else {
-            return (
-              <Grid item xs={12} key={repo.id}>
-                <RepoItem repo={repo} />
-              </Grid>
-            );
-          }
-        })}
+      <FormControl sx={{ mb: 3, minWidth: 160 }}>
+        <InputLabel id="timeframe-select-label">Time Period</InputLabel>
+        <Select
+          labelId="timeframe-select-label"
+          label="Time Period"
+          value={timeFrame}
+          onChange={handleTimeChange}
+        >
+          <MenuItem value="1w">Last Week</MenuItem>
+          <MenuItem value="2w">Last 2 Weeks</MenuItem>
+          <MenuItem value="1m">Last Month</MenuItem>
+        </Select>
+      </FormControl>
+
+      {error && <Alert severity="error">{error}</Alert>}
+
+      <Grid container direction="column" spacing={2}>
+        {repositories.map((repo) => (
+          <Grid item key={repo.id}>
+            <RepoCard
+              repo={repo}
+              isExpanded={expanded === repo.full_name}
+              onToggle={() => toggleExpand(repo.full_name, repo.owner.login, repo.name)}
+              loadingDetails={detailsLoading}
+            />
+          </Grid>
+        ))}
       </Grid>
 
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+        <Box sx={{ textAlign: 'center', my: 3 }}>
           <CircularProgress />
         </Box>
       )}
-
-      {!loading && repositories.length === 0 && !error && (
-        <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
-          No repositories found.
-        </Typography>
-      )}
-
-      {!hasMore && repositories.length > 0 && !loading && (
-        <Typography variant="body2" sx={{ textAlign: 'center', my: 3, color: 'text.secondary' }}>
-          You've reached the end of the list.
+      {!hasMore && !loading && (
+        <Typography align="center" color="text.secondary" sx={{ mt: 3 }}>
+          You’ve reached the end.
         </Typography>
       )}
     </Paper>
