@@ -1,21 +1,17 @@
+// src/components/CommitChart.jsx
 import React, { useMemo } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { useSelector } from 'react-redux';
 import { Paper, Typography } from '@mui/material';
-
-const formatDate = (ts) =>
-  new Date(ts * 1000).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+import { formatDate } from '../utils/formatters';
 
 const CommitChart = () => {
   const { commitActivity } = useSelector((s) => s.details);
 
   const options = useMemo(() => {
-    if (!commitActivity.length) return null;
+    if (!commitActivity?.length) return null;
+    
     return {
       chart: { type: 'column', height: 300 },
       title: { text: null },
@@ -50,7 +46,8 @@ const CommitChart = () => {
       </Paper>
     );
   }
+  
   return <HighchartsReact highcharts={Highcharts} options={options} />;
 };
 
-export default CommitChart;
+export default React.memo(CommitChart);

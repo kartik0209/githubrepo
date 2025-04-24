@@ -1,36 +1,33 @@
+// src/components/ContributorChart.jsx
 import React, { useMemo } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { useSelector } from 'react-redux';
 import { Paper, Typography } from '@mui/material';
-
-const formatDate = (ts) =>
-  new Date(ts * 1000).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+import { formatDate } from '../utils/formatters';
 
 const ContributorChart = () => {
   const { contributors, selectedMetric } = useSelector((s) => s.details);
 
   const options = useMemo(() => {
-    if (!contributors.length) return null;
+    if (!contributors?.length) return null;
 
     // find global min/max week
     let minW = Infinity,
-      maxW = 0;
+        maxW = 0;
+    
     contributors.forEach((c) =>
       c.weeks.forEach((w) => {
         minW = Math.min(minW, w.w);
         maxW = Math.max(maxW, w.w);
       })
     );
+    
     const timeline = [];
-    for (let w = minW; w <= maxW; w += 604_800)
+    for (let w = minW; w <= maxW; w += 604_800) // One week in seconds
       timeline.push(w * 1000);
 
-    const series = contributors.map((c, i) => {
+    const series = contributors.map((c) => {
       const weekMap = Object.fromEntries(c.weeks.map((w) => [w.w, w]));
       return {
         name: c.author.login,
@@ -50,7 +47,14 @@ const ContributorChart = () => {
     return {
       chart: { type: 'line', height: 300 },
       title: { text: null },
-      xAxis: { type: 'datetime', labels: { formatter() { return formatDate(this.value / 1000); } } },
+      xAxis: { 
+        type: 'datetime', 
+        labels: { 
+          formatter() { 
+            return formatDate(this.value / 1000); 
+          } 
+        } 
+      },
       yAxis: { title: { text: 'Count' } },
       series,
       tooltip: {
@@ -75,7 +79,8 @@ const ContributorChart = () => {
       </Paper>
     );
   }
+  
   return <HighchartsReact highcharts={Highcharts} options={options} />;
 };
 
-export default ContributorChart;
+export default React.memo(ContributorChart);
