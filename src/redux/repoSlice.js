@@ -45,7 +45,7 @@ export const {
   setTimeFrame,
 } = reposSlice.actions;
 
-// alias for use in components
+
 export const fetchRepos = fetchRepositoriesStart;
 
 export default reposSlice.reducer;

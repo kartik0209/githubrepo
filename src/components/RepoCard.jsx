@@ -22,14 +22,14 @@ const RepoCard = ({ repo, isExpanded, onToggle, loadingDetails }) => {
   const { selectedMetric } = useSelector((state) => state.details);
 
   const handleMetricChange = (e) => {
-    // Prevent the card from collapsing when changing the dropdown
+    
     dispatch(setSelectedMetric(e.target.value));
   };
 
   return (
     <Card onClick={onToggle} sx={{ cursor: 'pointer' }} elevation={1}>
       <CardContent>
-        {/* Header: avatar, name, description, stats */}
+     
         <Box display="flex" alignItems="center" gap={2}>
           <Avatar src={repo.owner.avatar_url} alt={repo.owner.login} />
           <Box flexGrow={1}>
@@ -43,12 +43,12 @@ const RepoCard = ({ repo, isExpanded, onToggle, loadingDetails }) => {
           </Box>
         </Box>
 
-        {/* Expanded content: only show when expanded */}
+     
         {isExpanded && (
           <Box mt={2}>
             <Divider sx={{ mb: 2 }} />
 
-            {/* Loading state */}
+         
             {loadingDetails ? (
               <Box textAlign="center">
                 <CircularProgress size={24} />
@@ -73,16 +73,16 @@ const RepoCard = ({ repo, isExpanded, onToggle, loadingDetails }) => {
                   </FormControl>
                 </Box>
 
-                {/* Commit Activity Chart */}
+             
                 <Typography variant="subtitle1" gutterBottom>
                   Overall Commit Activity
                 </Typography>
-                {/* Stop propagation so charts don't collapse the card on click */}
+              
                 <Box onClick={(e) => e.stopPropagation()}>
                   <CommitChart />
                 </Box>
 
-                {/* Contributor Activity Chart */}
+          
                 <Typography variant="subtitle1" gutterBottom sx={{ mt: 3 }}>
                   Contributor Activity
                 </Typography>
